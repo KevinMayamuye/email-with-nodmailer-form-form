@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Email form test</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; color: #222; }
+    label { display: block; margin: 12px 0 4px; }
+    input, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { margin-top: 16px; padding: 10px 16px; cursor: pointer; }
+    #status { margin-top: 16px; }
+    #status a { color: #1B4B5A; }
+  </style>
+</head>
+<body>
+  <h1>Contact form test</h1>
+  <p>Submit the form to send an enquiry email via SMTP.</p>
+  <form id="form">
+    <label for="name">Name</label>
+    <input id="name" name="name" required />
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" required />
+    <label for="message">Message</label>
+    <textarea id="message" name="message" rows="6" required></textarea>
+    <button type="submit">Send</button>
+  </form>
+  <p id="status"></p>
+  <script>
+    const form = document.getElementById('form');
+    const status = document.getElementById('status');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.textContent = 'Sending…';
+      const data = Object.fromEntries(new FormData(form));
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7926/ingest/3462e6a1-5f38-4ec0-aba6-357cd6233682',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5cda17'},body:JSON.stringify({sessionId:'5cda17',runId:'pre-fix',hypothesisId:'D',location:'public/index.html:submit',message:'Form fetch response',data:{httpStatus:res.status,ok:json.ok,error:json.error,hasPreviewUrl:Boolean(json.previewUrl)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      if (json.ok) {
+        if (json.previewUrl) {
+          status.innerHTML = 'Sent. Preview: <a href="' + json.previewUrl + '" target="_blank" rel="noopener">open email</a>';
+        } else {
+          status.textContent = 'Sent.';
+        }
+      } else {
+        status.textContent = 'Failed: ' + json.error;
+      }
+    });
+  </script>
+</body>
+</html>
